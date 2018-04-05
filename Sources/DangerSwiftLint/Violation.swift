@@ -1,21 +1,22 @@
+enum Severity: String, Codable {
+    case warning = "Warning"
+    case error = "Error"
+}
+    
 public struct Violation: Codable {
-    enum Severity: String, Codable {
-        case warning = "Warning"
-        case error = "Error"
-    }
-
     let ruleID: String
     let reason: String
     let line: Int
     let character: Int?
     let severity: Severity
     let type: String
+    var inline: Bool
     
     private(set) var file: String
 
     enum CodingKeys: String, CodingKey {
         case ruleID = "rule_id"
-        case reason, line, character, file, severity, type
+        case reason, line, character, file, severity, type, inline
     }
 
     public init(from decoder: Decoder) throws {
@@ -27,15 +28,27 @@ public struct Violation: Codable {
         file = try values.decode(String.self, forKey: .file)
         severity = try values.decode(Severity.self, forKey: .severity)
         type = try values.decode(String.self, forKey: .type)
+        inline = false
     }
 
     public func toMarkdown() -> String {
         let formattedFile = file.split(separator: "/").last! + ":\(line)"
-        return "\(severity.rawValue) | \(formattedFile) | \(reason) |"
+        return "| \(severity.emojiSeverity) | \(formattedFile) | \(reason) |"
     }
 
     mutating func update(file: String) {
         self.file = file
+    }
+}
+
+extension Severity {
+    var emojiSeverity: String {
+        switch self {
+        case .warning:
+            return "⚠️"
+        case .error:
+            return "❗️"
+        }
     }
 }
 
